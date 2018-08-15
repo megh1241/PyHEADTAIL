@@ -12,7 +12,7 @@ from .. general import pmath as pm
 
 from ..general.decorators import deprecated
 from . import Element, Printing
-
+from PyHEADTAIL.sixtracklib_interface.ctypes_interface import *
 
 class TransverseSegmentMap(Element):
     """ Class to transport/track the particles of the beam in the
@@ -62,11 +62,14 @@ class TransverseSegmentMap(Element):
 
         # bind the implementation of the tracking depending on whether
         # the all dispersion parameters are close to 0 or not
+        '''
         if np.allclose([D_x_s0, D_x_s1, D_y_s0, D_y_s1],
                        np.zeros(4), atol=1e-3):
             self._track = self._track_without_dispersion
         else:
             self._track = self._track_with_dispersion
+        '''
+        self._track = self._track_non_linear
 
     def _build_segment_map(self, alpha_x_s0, beta_x_s0, alpha_x_s1, beta_x_s1,
                            alpha_y_s0, beta_y_s0, alpha_y_s1, beta_y_s1):
@@ -135,6 +138,20 @@ class TransverseSegmentMap(Element):
         beam.x, beam.xp = M00*beam.x + M01*beam.xp, M10*beam.x + M11*beam.xp
         beam.y, beam.yp = M22*beam.y + M23*beam.yp, M32*beam.y + M33*beam.yp
 
+
+    def _track_non_linear(self, beam):
+        """This method calls sixtracklib's tracking function which supports
+        non linear tracking.
+        """
+        momenta_coords_dict = beam.get_coords_n_momenta_dict()
+        updated_momenta_coords_dict = \
+            particle_coordinates_sixtrack_struct(momenta_coords_dict, 
+                fname="/home/mmadhyas/sixtracklib_gsoc18/studies/study10/build/libsample_fodod.so", 
+                    n_part=beam.macroparticlenumber)
+
+        beam.update(updated_momenta_coords_dict)
+
+
     def track(self, beam):
         """ The dphi_{x,y} denote the phase advance in the horizontal
         and vertical plane respectively for the given accelerator
@@ -193,7 +210,8 @@ class TransverseSegmentMap(Element):
         M33 = self.I[3, 3] * c_dphi_y + self.J[3, 3] * s_dphi_y
 
         # bound to _track_with_dispersion or _track_without_dispersion
-        self._track(beam, M00, M01, M10, M11, M22, M23, M32, M33)
+        self._track(beam)
+        #self._track(beam, M00, M01, M10, M11, M22, M23, M32, M33)
 
 
 class TransverseMap(Printing):

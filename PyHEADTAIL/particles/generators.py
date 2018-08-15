@@ -293,6 +293,13 @@ class ParticleGenerator(Printing):
                            'dp': np.ascontiguousarray(z_phase_space[1])})
             assert len(coords['z']) == len(coords['dp'])
 
+        coords.update({'q0': np.ascontiguousarray(self.mass*np.ones(self.macroparticlenumber)),
+                           'mass0': np.ascontiguousarray(self.mass*np.ones(self.macroparticlenumber)),
+                           'beta0': np.ascontiguousarray(np.sqrt(1.-self.gamma**(-2)) * np.ones(self.macroparticlenumber)),
+                           'gamma0': np.ascontiguousarray(self.gamma * np.ones(self.macroparticlenumber)),
+                           'p0c': np.ascontiguousarray(np.sqrt(self.gamma**2 - 1) * self.mass * c *np.ones(self.macroparticlenumber))
+                           })
+
         return coords
 
     def _linear_match_phase_space(self, beam):
